@@ -93,6 +93,9 @@ export async function vueRecettes(conteneur, params) {
           <p class="sous-titre">Le registre chronologique de vos encaissements.</p>
         </div>
         <div class="actions">
+          <button type="button" class="btn btn-fantome" id="synchro-stripe" hidden title="Récupérer les nouveaux paiements Stripe">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>Stripe
+          </button>
           <a class="btn btn-fantome" href="#/import">${icone('import', { taille: 16 })}Importer</a>
           <a class="btn btn-fantome" id="lien-exporter" href="#/exports?registre=recettes">${icone('telecharger', { taille: 16 })}Exporter</a>
           <button type="button" class="btn btn-principal" id="nouvelle-recette" aria-haspopup="dialog">${icone('plus', { taille: 16 })}Nouvelle recette</button>
@@ -100,6 +103,32 @@ export async function vueRecettes(conteneur, params) {
       </header>
       <section class="carte" id="registre" aria-label="Livre des recettes"></section>
     </div>`;
+
+  // Synchro Stripe (usage sur serveur, LDR_STRIPE_KEY) : bouton affiché si active.
+  const boutonStripe = conteneur.querySelector('#synchro-stripe');
+  fetch('/api/stripe').then((r) => (r.ok ? r.json() : null)).then((s) => {
+    if (!s?.active) return;
+    boutonStripe.hidden = false;
+    if (s.derniereSynchro) boutonStripe.title = `Dernière synchro : ${new Date(s.derniereSynchro).toLocaleString('fr-FR')}`;
+  }).catch(() => {});
+  boutonStripe.addEventListener('click', async () => {
+    boutonStripe.disabled = true;
+    try {
+      const reponse = await fetch('/api/stripe/synchroniser', { method: 'POST' });
+      const s = await reponse.json();
+      if (s.erreur) throw new Error(`Stripe : ${s.erreur}`);
+      if (s.dernierAjout > 0) {
+        toast(`${s.dernierAjout} paiement${s.dernierAjout > 1 ? 's' : ''} Stripe ajouté${s.dernierAjout > 1 ? 's' : ''}.`);
+        setTimeout(() => location.reload(), 800);
+      } else {
+        toast('Aucun nouveau paiement Stripe.');
+      }
+    } catch (erreur) {
+      toast(erreur.message, 'erreur');
+    } finally {
+      boutonStripe.disabled = false;
+    }
+  });
 
   const registre = installerRegistre(conteneur.querySelector('#registre'), {
     id: 'recettes',

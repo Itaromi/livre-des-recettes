@@ -13,6 +13,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { installerAuthentification } from './authentification.js';
+import { creerSyncStripe } from './stripe.js';
 import { fileURLToPath } from 'node:url';
 import express from 'express';
 import { creerStockage } from './stockage.js';
@@ -186,6 +187,10 @@ export function creerApp({
     copieExterne.demarrer();
   }
 
+  // Paiements Stripe ajoutés automatiquement (inactif sans LDR_STRIPE_KEY).
+  const stripe = creerSyncStripe(stockage);
+  if (taches) stripe.demarrer();
+
   const app = express();
   app.disable('x-powered-by');
   app.use(refuserHotesInconnus);
@@ -213,6 +218,9 @@ export function creerApp({
   app.use('/api/sauvegarde', routesFichierSauvegarde(creerFichierSauvegarde({ stockage, pieces, copieExterne })));
   app.use('/api/securite', routesSecurite({ stockage, copieExterne, archives }));
   app.use('/api/maj', routesMaj(stockage, arreter));
+  // Synchronisation Stripe : état, et lancement à la demande.
+  app.get('/api/stripe', (req, res) => res.json(stripe.etat()));
+  app.post('/api/stripe/synchroniser', async (req, res) => res.json(await stripe.synchroniser()));
   // L'échec d'une mise à jour a été montré à l'utilisateur : il ne l'est plus.
   app.post('/api/maj/echec-vu', (req, res) => {
     majEchouee = null;
