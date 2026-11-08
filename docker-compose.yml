@@ -4,6 +4,7 @@ services:
     image: livre-des-recettes:local
     container_name: livre-des-recettes
     restart: unless-stopped
+    env_file: .env                  # LDR_USER / LDR_PASSWORD (non versionné)
     environment:
       # Noms/IP par lesquels tu ouvres l'appli (sans le port)
       - LDR_ALLOWED_HOSTS=192.168.1.147,dxp4800plus-c18.lan

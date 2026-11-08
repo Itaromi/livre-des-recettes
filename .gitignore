@@ -8,6 +8,7 @@ sauvegardes/
 # Variables d'environnement (au cas où)
 .env
 .env.*
+!.env.example
 
 # Exécutables construits localement (npm run construire:exe)
 dist/
