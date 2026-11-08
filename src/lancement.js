@@ -16,6 +16,14 @@ import { acquerirVerrou } from './verrou.js';
 import { nettoyerAncienneVersion, TEMOIN_MAJ } from './maj.js';
 import { ouvrirDansLeSysteme } from './emplacements.js';
 
+/**
+ * Adresse d'écoute. 127.0.0.1 par défaut : l'application n'est joignable que
+ * depuis cette machine. `LDR_HOST=0.0.0.0` l'ouvre au réseau (serveur, Docker) :
+ * à combiner avec `LDR_ALLOWED_HOSTS`, et à réserver à un réseau de confiance
+ * (l'application n'a pas d'authentification).
+ */
+const HOTE_ECOUTE = process.env.LDR_HOST || '127.0.0.1';
+
 /** Nombre de ports essayés avant d'abandonner (3000, 3001, 3002…). */
 const PORTS_ESSAYES = 10;
 
@@ -95,7 +103,7 @@ export function demarrerServeur({ dossierDonnees, port = 3000, actifs, surEchec 
 
   const ecouter = (portEssai, restants) => {
     if (PORTS_REFUSES_PAR_LES_NAVIGATEURS.has(portEssai)) return ecouter(portEssai + 1, restants);
-    serveur = app.listen(portEssai, '127.0.0.1', (erreur) => {
+    serveur = app.listen(portEssai, HOTE_ECOUTE, (erreur) => {
       // Express rappelle aussi en cas d'échec (port occupé) : l'écouteur
       // `error` ci-dessous s'en charge, rien n'est annoncé ni ouvert.
       if (erreur) return;

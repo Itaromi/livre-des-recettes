@@ -3,6 +3,7 @@ node_modules/
 
 # Données de l'utilisateur (jamais versionnées)
 data/
+sauvegardes/
 
 # Variables d'environnement (au cas où)
 .env

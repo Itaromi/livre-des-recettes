@@ -9,7 +9,11 @@
  *  - `LDR_DATA_DIR` : dossier des données (défaut : « Documents/Livre des
  *                     recettes »), pratique pour pointer vers un dossier
  *                     synchronisé ou un jeu de données de développement ;
- *  - `LDR_NO_OPEN`  : si définie, n'ouvre pas le navigateur au démarrage.
+ *  - `LDR_NO_OPEN`  : si définie, n'ouvre pas le navigateur au démarrage ;
+ *  - `LDR_HOST`     : adresse d'écoute (défaut : 127.0.0.1 ; 0.0.0.0 pour
+ *                     un usage sur serveur / Docker) ;
+ *  - `LDR_ALLOWED_HOSTS` : noms d'hôte acceptés en plus de localhost,
+ *                     séparés par des virgules (ex. `192.168.1.147,nas.lan`).
  */
 
 import { DOSSIER_DONNEES_DEFAUT } from './src/app.js';

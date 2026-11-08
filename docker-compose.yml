@@ -1,0 +1,15 @@
+services:
+  livre-des-recettes:
+    build: .
+    image: livre-des-recettes:local
+    container_name: livre-des-recettes
+    restart: unless-stopped
+    environment:
+      # Noms/IP par lesquels tu ouvres l'appli (sans le port)
+      - LDR_ALLOWED_HOSTS=192.168.1.147,dxp4800plus-c18.lan
+      - TZ=Europe/Paris
+    volumes:
+      - ./data:/data                # livre-des-recettes.json + PDF
+      - ./sauvegardes:/sauvegardes  # sauvegardes automatiques
+    ports:
+      - "3010:3000"

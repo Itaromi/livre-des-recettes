@@ -70,8 +70,21 @@ export const VERSION = (() => {
  */
 export const DOSSIER_DONNEES_DEFAUT = dossierDonneesParDefaut();
 
-/** Noms sous lesquels l'application se sert elle-même, sur cette machine. */
-const HOTES_LOCAUX = new Set(['localhost', '127.0.0.1', '[::1]']);
+/**
+ * Noms sous lesquels l'application se sert elle-même, sur cette machine.
+ *
+ * `LDR_ALLOWED_HOSTS` (liste séparée par des virgules) en ajoute d'autres,
+ * pour un usage sur serveur (NAS, Docker) : par exemple
+ * `LDR_ALLOWED_HOSTS=192.168.1.147,nas.lan`. Seuls ces noms sont acceptés,
+ * la parade au DNS rebinding reste donc active.
+ */
+const HOTES_LOCAUX = new Set([
+  'localhost', '127.0.0.1', '[::1]',
+  ...String(process.env.LDR_ALLOWED_HOSTS ?? '')
+    .split(',')
+    .map((hote) => hote.trim().toLowerCase().replace(/:\d+$/, ''))
+    .filter(Boolean)
+]);
 
 /**
  * Refuse toute requête adressée à un autre nom que la machine elle-même.
