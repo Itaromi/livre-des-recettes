@@ -21,6 +21,7 @@ async function requete(chemin, options = {}) {
   });
 
   if (!reponse.ok) {
+    if (reponse.status === 401) allerALaConnexion();
     const corps = await reponse.json().catch(() => null);
     const erreur = new Error(corps?.erreur ?? `Erreur ${reponse.status}`);
     erreur.statut = reponse.status;
@@ -32,6 +33,21 @@ async function requete(chemin, options = {}) {
     window.dispatchEvent(new Event('donnees-enregistrees'));
   }
   return reponse.status === 204 ? null : reponse.json();
+}
+
+/**
+ * Session expirée (usage sur serveur avec mot de passe) : retour à la page
+ * de connexion, puis à l'écran en cours une fois reconnecté.
+ */
+function allerALaConnexion() {
+  const ici = location.pathname + location.search + location.hash;
+  location.assign(`/connexion?suite=${encodeURIComponent(ici)}`);
+}
+
+/** Ferme la session puis affiche la page de connexion. */
+export async function seDeconnecter() {
+  await fetch('/api/deconnexion', { method: 'POST' }).catch(() => {});
+  location.assign('/connexion');
 }
 
 /** Routes qui écrivent dans le livre (les autres lisent, copient ou analysent). */
@@ -153,6 +169,7 @@ export function urlExport(format, periode, registre = '', { avecPieces = false }
 export async function telechargerFichier(url) {
   const reponse = await fetch(url);
   if (!reponse.ok) {
+    if (reponse.status === 401) allerALaConnexion();
     const corps = await reponse.json().catch(() => null);
     throw new Error(corps?.erreur ?? `Erreur ${reponse.status}`);
   }

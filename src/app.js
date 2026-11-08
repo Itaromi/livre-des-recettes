@@ -12,7 +12,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import crypto from 'node:crypto';
+import { installerAuthentification } from './authentification.js';
 import { fileURLToPath } from 'node:url';
 import express from 'express';
 import { creerStockage } from './stockage.js';
@@ -98,34 +98,6 @@ const HOTES_LOCAUX = new Set([
  * indice qui le trahit est l'en-tête `Host`, qui porte encore son nom de
  * domaine : il est vérifié avant tout le reste. Le port, lui, n'importe pas.
  */
-/**
- * Mot de passe optionnel (authentification HTTP Basic), pour un usage sur
- * serveur : actif seulement si `LDR_PASSWORD` est défini. `LDR_USER` vaut
- * « livre » par défaut. Comparaison à temps constant (empreintes SHA-256).
- */
-const IDENTIFIANT = process.env.LDR_USER || 'livre';
-const MOT_DE_PASSE = process.env.LDR_PASSWORD || '';
-
-function empreinte(texte) {
-  return crypto.createHash('sha256').update(String(texte)).digest();
-}
-
-function exigerMotDePasse(req, res, suite) {
-  if (!MOT_DE_PASSE) return suite();
-  const [schema, valeur] = String(req.get('Authorization') ?? '').split(' ');
-  if (schema === 'Basic' && valeur) {
-    const decode = Buffer.from(valeur, 'base64').toString('utf8');
-    const separateur = decode.indexOf(':');
-    const utilisateur = decode.slice(0, separateur);
-    const motDePasse = decode.slice(separateur + 1);
-    const okUtilisateur = crypto.timingSafeEqual(empreinte(utilisateur), empreinte(IDENTIFIANT));
-    const okMotDePasse = crypto.timingSafeEqual(empreinte(motDePasse), empreinte(MOT_DE_PASSE));
-    if (separateur >= 0 && okUtilisateur && okMotDePasse) return suite();
-  }
-  res.set('WWW-Authenticate', 'Basic realm="Livre des recettes", charset="UTF-8"');
-  res.status(401).send('Authentification requise.');
-}
-
 function refuserHotesInconnus(req, res, suite) {
   const hote = String(req.get('Host') ?? '').toLowerCase().replace(/:\d+$/, '');
   if (HOTES_LOCAUX.has(hote)) return suite();
@@ -217,10 +189,11 @@ export function creerApp({
   const app = express();
   app.disable('x-powered-by');
   app.use(refuserHotesInconnus);
-  app.use(exigerMotDePasse);
   app.use(refuserRequetesExterieures);
   // Limite généreuse : un import CSV de plusieurs milliers de lignes passe en JSON.
   app.use(express.json({ limit: '20mb' }));
+  // Page de connexion et contrôle d'accès (inactifs sans LDR_PASSWORD).
+  installerAuthentification(app);
 
   // ---- API -----------------------------------------------------------------
   // Un livre momentanément inaccessible (resté dans le nuage…) est relu avant

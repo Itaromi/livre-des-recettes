@@ -8,7 +8,7 @@
  * de la page courante glisse jusqu'au bon lien.
  */
 
-import { api } from './api.js';
+import { api, seDeconnecter } from './api.js';
 import { chargerEtat, etat, registreAchatsUtile } from './etat.js';
 import {
   echapperHtml, toast, confirmer, dialogueAttente, chargeur, installerInfobulles, mouvementReduit, enFondu, fermerMenu, heureLisible
@@ -90,14 +90,29 @@ function construireRail() {
       <div class="ligne-reglages">
         ${liens(3)}
         <button type="button" class="bascule-theme" id="bouton-theme"></button>
+        <button type="button" class="bascule-theme" id="bouton-deconnexion" title="Se déconnecter" aria-label="Se déconnecter" ${connexionActive ? '' : 'hidden'}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg>
+        </button>
       </div>
       <p class="mention-locale"><span class="ligne-version"><span id="version-app">${etat.systeme ? `Version ${echapperHtml(etat.systeme.version)}` : ''}</span><span class="etat-enregistrement" id="etat-enregistrement" aria-hidden="true"></span></span>
         <a class="lien-soutien" href="https://buymeacoffee.com/rdsv01" target="_blank" rel="noopener">Offrir un café à l’auteur</a></p>
     </div>`;
   nav.querySelector('#bouton-theme').addEventListener('click', (evenement) => basculerTheme(evenement.currentTarget));
   nav.querySelector('#recherche-rail').addEventListener('click', rechercher);
+  nav.querySelector('#bouton-deconnexion').addEventListener('click', seDeconnecter);
   majRail({ anime: false });
 }
+
+/** Connexion par mot de passe active (usage sur serveur) : le bouton de déconnexion s'affiche. */
+let connexionActive = false;
+fetch('/api/connexion/etat')
+  .then((r) => (r.ok ? r.json() : null))
+  .then((reponse) => {
+    connexionActive = Boolean(reponse?.active);
+    const bouton = document.getElementById('bouton-deconnexion');
+    if (bouton) bouton.hidden = !connexionActive;
+  })
+  .catch(() => {});
 
 /** Durée pendant laquelle l'heure d'enregistrement remplace la version (ms). */
 const DUREE_ENREGISTREMENT = 7000;
